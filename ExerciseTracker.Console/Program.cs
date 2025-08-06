@@ -3,9 +3,12 @@ using ExerciseTracker.Niasua.Data;
 using ExerciseTracker.Niasua.Repositories;
 using ExerciseTracker.Niasua.Services;
 using ExerciseTracker.Niasua.UI.Menus;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Data;
+using System.Data.SqlClient;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
@@ -16,10 +19,17 @@ var services = new ServiceCollection();
 
 services.AddSingleton<IConfiguration>(config);
 
-services.AddDbContext<ExerciseContext>(options =>
-    options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+//services.AddDbContext<ExerciseContext>(options =>
+//    options.UseSqlServer(config.GetConnectionString("DefaultConnection"))); // <--- EF
 
-services.AddScoped<IExerciseRepository, ExerciseRepository>();
+services.AddTransient<IDbConnection>(sp => // <--- Dapper
+{
+    var connectionString = config.GetConnectionString("DefaultConnection");
+    return new SqlConnection(connectionString);
+});
+
+//services.AddScoped<IExerciseRepository, ExerciseRepository>(); // <--- EF
+services.AddScoped<IExerciseRepository, ExerciseRepositoryDapper>(); // <--- Dapper
 services.AddScoped<ExerciseService>();
 services.AddScoped<ExerciseController>();
 
